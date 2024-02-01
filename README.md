@@ -1,2 +1,2 @@
 # CheckIPer
-Зprogram for ping multiple devices and displaying results
+Program for ping multiple devices and displaying results
