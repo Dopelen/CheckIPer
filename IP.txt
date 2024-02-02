@@ -1,0 +1,13 @@
+google.com	big searching service	USA	giga
+yandex.ru	big searching service from Ru	RU	giga
+wikipedia.org	big enciclopedia	USA	encyclopedia
+reddit.com	Memes on your topics	USA	Forum
+amazon.com	They bring you things	USA	technology company
+yahoo.com	big searching service from 2000	USA	giga
+whatsapp.com	big messnger	USA	Messenger
+openai.com	a friend who is trying to deceive	USA	AI
+similarweb.com	important sity	USA	idk
+netflix.com	yesflix	USA	Joy
+dzen.ru	news syte	Ru	news
+office.com	cool show	USA	Software
+bing.com	searching	USA	technology company
