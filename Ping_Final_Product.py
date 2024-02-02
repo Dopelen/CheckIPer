@@ -444,7 +444,7 @@ In accordance with the IP, it carries out a check and adds its results to the li
 The check is performed using subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 "command" is the verification parameters (1 package).
 As a result of the check, only the return code is read and, in accordance with it,
-the status is added to the IP information sheet
+the status is added to the IP information list.
 
 if first ... else... are necessary for the further implementation of the mechanism for re-checking
 non-responding addresses. So far there is no visual component to implement this functionality
