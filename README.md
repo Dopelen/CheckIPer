@@ -1,6 +1,7 @@
 # CheckIPer
 Program for ping multiple devices and displaying results
 
+
 ## What does CheckIPer do?
 * Receives a list of IP addresses required for verification with their description from a text file
 * Checks them with the ping command
@@ -55,7 +56,6 @@ Fields are separated by a single tab character ("**\t**")
 > * The separator between fields is a single tab "\t"
 > * If the field is expected to be empty, enter "-"
 > * A common error (on all 4 computers that I checked :)) is a problem with the delimiter inside the text file, someeditors automatically convert tabs to spaces
-
 
 
 #### Software which I used and also which you need to run it :
