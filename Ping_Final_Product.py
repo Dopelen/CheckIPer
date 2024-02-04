@@ -446,7 +446,7 @@ The check is performed using subprocess.run(command, stdout=subprocess.PIPE, std
 As a result of the check, only the return code is read and, in accordance with it,
 the status is added to the IP information list.
 
-if first ... else... are necessary for the further implementation of the mechanism for re-checking
+"if first" (code below) are necessary for the further implementation of the mechanism for re-checking
 non-responding addresses. So far there is no visual component to implement this functionality
 
         """
