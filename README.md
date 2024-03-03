@@ -11,6 +11,8 @@ Program for ping multiple devices and displaying results
 
 - Allows grouping of output
 - Can ping automatically at specified time intervals
+- Shows an error if the selected file does not match the formatting
+- Allows you to select a file via the file manager and remembers your previous selection
 
 ***Just look at this cool demo***
 
@@ -18,14 +20,14 @@ https://github.com/Dopelen/CheckIPer/assets/141639888/99f040ee-ef7c-4b6a-811d-a1
 
 ### Features in development
 1. There is an asynchronous implementation that works much faster, but it is still unstable and not tied to the GUI
-1. There is also a desire to record IP addresses inside the application to get rid of problems with entering through a file
 1. Also in operation is a screen for additional checking of servers that do not respond
+1. Console implementation without GUI
 
 
 ### Input
-Input is made from a text file name "IP.txt"
+Input is made from a text file selected after push button "Select file" or "Start"
 
-Each IP address has its own line and description fields
+Each IP address in txt file has its own line and description fields
 
 Description fields go one after another in order:
 
