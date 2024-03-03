@@ -1,4 +1,8 @@
+import os
+import sys
+
 from kivy.config import Config
+from kivy.resources import resource_add_path, resource_find
 
 Config.set('graphics', 'resizable', False)
 import platform
@@ -29,8 +33,7 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scatter import Scatter
-
-
+from kivy.uix.filechooser import FileChooserIconView
 
 Window.size = (600, 600)
 Window.clearcolor = (70 / 255, 70 / 255, 120 / 255, 1)
@@ -44,6 +47,7 @@ class MySpinnerOption(SpinnerOption):
 
 class Start_Bt_with_Shadow(Button):
     """Shadow setting for custom button"""
+
     def __init__(self, **kwargs):
         super(Start_Bt_with_Shadow, self).__init__(**kwargs)
         self.bind(pos=self.update_shadow, size=self.update_shadow, state=self.update_shadow)
@@ -69,6 +73,7 @@ class Start_Bt_with_Shadow(Button):
 
 class RedCircle(Widget):
     """"Custom Widget with Color and Animation settings"""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         with self.canvas:
@@ -155,6 +160,7 @@ class TitleButton(Button):
 
 class TimeInput(TextInput):
     """Contains additional conditions for input restrictions"""
+
     def insert_text(self, substring, from_undo=False):
         """ Gets a string and blocks input for certain characters in the following cases:
 If the character is not a digit.
@@ -173,6 +179,7 @@ If the number obtained as a result of entering is greater than 60
 
 class MyApp(App):
     """Creating ScreenManager with 2 screans and animation of changing screen"""
+
     def build(self):
         Screens_of_app = ScreenManager(
             transition=WipeTransition(duration=1, clearcolor=(70 / 255, 70 / 255, 120 / 255, 1)))
@@ -182,7 +189,7 @@ class MyApp(App):
 
 
 class InterfaceScreen(Screen):
-    """Receives a text file called "IP.txt" from the launch file directory and, based on it,
+    """Receives a text file from "Select file" function and, based on it,
 constructs a graphical display of the results of the "ping" command for the IP addresses
 specified in the file and their description.
 
@@ -190,11 +197,11 @@ Also allows the above check to be carried out at a certain interval (with a maxi
 after entering the interval duration in the "Change timer" window.
 
 During code execution, the operating system used is checked to adjust the parameters of the ping command
-(using platform.system()), so that the program can run on different operating systems
+(using platform.system()), so that the program can run on different operating systems.
 
-The "IP.txt" file is generated as follows:
+For the program to work correctly, you must follow the file structure:
 IP"separator"Description"separator"Place"separator"Type
-In this implementation, the separator is tab: \t
+In this implementation, the separator is a tab: \t
 Thus, "Description" corresponds to the field in the text file that comes after IP in the file "IP.txt" separated by \t
 "Place" corresponds to the field in the text file that comes after "Description" in the file "IP.txt" separated by \t and so on
 
@@ -212,10 +219,12 @@ Grouping is carried out on the data obtained in the previous iteration and does 
         self.started = False
         self.current_time = "00:00:00"
         self.timer_empty = True
+        self.path = ''
+        self.error_catcher = False
         # For the timer to work correctly, it is necessary to clear currently ongoing events before starting new ones,
         # To avoid errors due to trying to cancel a running event, before it has been created, this variable is introduced,
         # which is a Clock object that can be canceled until the user uses the timer
-        self.time_update = Clock.schedule_once(self.update_IP, 100)
+        self.time_update = Clock.schedule_once(self.clock_std, 100)
         background_layout = BoxLayout(orientation="vertical", padding=10, spacing=10)
         upper_box = BoxLayout(orientation="horizontal", size_hint=(1, .1))
         color_theme_bt = ToggleButton(text="Light", font_size=(10), halign="left", valign="top", size_hint=(.1, 1),
@@ -252,7 +261,7 @@ Grouping is carried out on the data obtained in the previous iteration and does 
         lower_sl = StackLayout(size_hint=(1, .1), orientation='lr-tb', spacing=10)
         start_but = Start_Bt_with_Shadow(text="Start", size_hint=(.1, 1),
                                          background_color=(70 / 255, 70 / 255, 120 / 255, 0.8))
-        start_but.bind(on_press=self.ping_initialization_loading_screen)
+        start_but.bind(on_press=self.previous_selection)
         lower_sl.add_widget(start_but)
         group_spiner = Spinner(text="Group output", values=("Description", "Place", "Type", "Status"),
                                size_hint=(.3, 1), background_color=(70 / 255, 70 / 255, 120 / 255, 0.8),
@@ -262,7 +271,7 @@ Grouping is carried out on the data obtained in the previous iteration and does 
         change_time_bt = Button(text="Change timer", size_hint=(.3, 1),
                                 background_color=(70 / 255, 70 / 255, 120 / 255, 0.8))
         lower_sl.add_widget(change_time_bt)
-        lower_sl.add_widget(Button(text="Update IP's", size_hint=(.3, 1), on_press=self.update_IP,
+        lower_sl.add_widget(Button(text="Select file", size_hint=(.3, 1), on_press=self.select_file,
                                    background_color=(70 / 255, 70 / 255, 120 / 255, 0.8)))
         time_window = BoxLayout(orientation="vertical", spacing=10)
         time_input_window = BoxLayout(orientation="horizontal")
@@ -283,6 +292,31 @@ Grouping is carried out on the data obtained in the previous iteration and does 
         timer_view.bind(on_dismiss=self.timer_status)
         background_layout.add_widget(lower_sl)
         self.add_widget(background_layout)
+        self.error_popup = Popup(title='Error',
+                                 content=Label(
+                                     text="Processing this file caused an error, please check if the file is in the required format:\nIP\\tDescription\\tPlace\\tType\nIn this implementation, the separator is a tab: \\t",
+                                     size_hint_y=None,
+                                     text_size=(400, None),
+                                     halign='left',
+                                     valign='top', padding=(30, 10)),
+                                 size_hint=(None, None), size=(400, 200), title_align="center",
+                                 overlay_color=(0, 0, 0, .85),
+                                 separator_color=(70 / 255, 70 / 255, 120 / 255, 1),
+                                 background_color=(1, 1, 1.7, 1))
+
+    def previous_selection(self, instance):
+        """This function starts the check if a check file has been selected previously, or prompts you to select a file
+        Also shows an error if an error occurred while reading the file
+
+        """
+
+        if not os.path.isfile("CheckIPer_previous_selection.txt"):
+            self.select_file(self)
+        else:
+            if not self.error_catcher:
+                self.ping_initialization_loading_screen()
+            else:
+                self.error_popup.open()
 
     def ping_initialization_loading_screen(self, *args):
         """Constructs a loading screen using an image and a ttf font file obtained from the launch directory
@@ -305,7 +339,8 @@ and then creates a separate control thread to execute the ping command.
         loading_fl.add_widget(rotat)
         self.loading_popup = Popup(title='', content=loading_fl, title_align="center", overlay_color=(0, 0, 0, .45),
                                    size_hint=(None, None), size=(450, 450), auto_dismiss=False,
-                                   separator_color=(70 / 255, 70 / 255, 120 / 255, 1), background_color=(1, 1, 1.7, 1))
+                                   separator_color=(70 / 255, 70 / 255, 120 / 255, 1),
+                                   background_color=(1, 1, 1.7, 1))
         self.loading_popup.open()
         main_anim = Animation(rotation=360000, duration=3000, center=rotat.center)
         main_anim.start(rotat)
@@ -362,9 +397,11 @@ Calls the function to create pop-up windows on_press for fields that do not fit 
     def full_name_popup_constract(self, instance):
         """Receives a button and based on its content creates a popup window displaying the received text limited to 30 characters"""
 
-        full_name_ip_popup = Popup(title='', content=Label(text=instance.text), size_hint=(None, None), size=(400, 100),
+        full_name_ip_popup = Popup(title='', content=Label(text=instance.text), size_hint=(None, None),
+                                   size=(400, 100),
                                    auto_dismiss=True, overlay_color=(0, 0, 0, .45),
-                                   separator_color=(70 / 255, 70 / 255, 120 / 255, 1), background_color=(1, 1, 1.7, 1))
+                                   separator_color=(70 / 255, 70 / 255, 120 / 255, 1),
+                                   background_color=(1, 1, 1.7, 1))
         if len(instance.text) > 30:
             full_name_ip_popup.content.text = f"{instance.text[:30]}..."
         full_name_ip_popup.open()
@@ -432,9 +469,29 @@ after the time has expired
         else:
             self.timer_empty = False
 
-    def update_IP(self, instance):
-        """Feature awaiting implementation in the future"""
-        pass
+    def select_file(self, instance):
+        """Calls the file manager when you click on the file selection button, or if the file was not selected earlier, when you click on the start button"""
+        file_chooser = FileChooserIconView()
+        file_chooser.filters = ["*.txt"]
+        file_chooser.bind(on_submit=self.file_selected)
+        file_chooser_window = BoxLayout(orientation="vertical", spacing=10)
+        file_chooser_window.add_widget(file_chooser)
+        self.file_chooser_view = Popup(title='Select the file with data',
+                                       content=file_chooser_window,
+                                       size_hint=(None, None), size=(500, 500), title_align="center",
+                                       overlay_color=(0, 0, 0, .7),
+                                       separator_color=(70 / 255, 70 / 255, 120 / 255, 1),
+                                       background_color=(1, 1, 1.7, 1))
+        self.file_chooser_view.open()
+
+    def file_selected(self, file_chooser, selected, mouse_pos):
+        """Sends the path to the file selected through the manager, then closes the file manager, records the file path for future calls"""
+        if selected:
+            self.path = selected[0]
+            with open("CheckIPer_previous_selection.txt", "w") as new_memo:
+                new_memo.write(self.path)
+                self.error_catcher = False
+            self.file_chooser_view.dismiss()
 
     def ping(self, host, package_amount="1", first=True):
         """The function receives a string containing 4 fields separated by a "separator" (\t default).
@@ -446,14 +503,18 @@ The check is performed using subprocess.run(command, stdout=subprocess.PIPE, std
 As a result of the check, only the return code is read and, in accordance with it,
 the status is added to the IP information list.
 
-"if first" (code below) are necessary for the further implementation of the mechanism for re-checking
+if first ... else... are necessary for the further implementation of the mechanism for re-checking
 non-responding addresses. So far there is no visual component to implement this functionality
 
         """
 
         if first:
-            host = host.split("\t")
-            self.IP_info[host[0]] = [host[1], host[2], host[3], "IN PROCESS"]
+            try:
+                host = host.split("\t")
+                self.IP_info[host[0]] = [host[1], host[2], host[3], "IN PROCESS"]
+            except Exception as format_exc:
+                self.error_catcher = True
+                return
         command = ['ping', self.param, package_amount, host[0]]
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0 and b'TTL=' in result.stdout:
@@ -471,37 +532,27 @@ non-responding addresses. So far there is no visual component to implement this 
             print(result.stdout.decode("866"))
 
     def read_ip(self):
-        """A function that opens the IP.txt file located in the launch directory of the program file,
+        """A function that opens the selected from select function .txt file,
 initiates checking each line, and also schedules the launch of view and reset_time
-
         """
 
-        with open("IP.txt", "r") as verifiable_ip:
+        with open("CheckIPer_previous_selection.txt", "r") as memo:
+            self.path = memo.readline()
+        with open(f"{self.path}", "r") as verifiable_ip:
             check = verifiable_ip.read().splitlines()
             for line in check:
-                self.ping(line)
+                if not self.error_catcher:
+                    self.ping(line)
         self.loading_popup.dismiss()
         Clock.schedule_once(lambda dt: self.update_view())
         Clock.schedule_once(lambda dt: self.reset_time())
 
+    def clock_std(self, instance):
+        pass
+
 
 if __name__ == "__main__":
+    if hasattr(sys, '_MEIPASS'):
+        resource_add_path(os.path.join(sys._MEIPASS))
     application = MyApp()
     application.run()
-
-
-# Functionality for additional verification, released in future versions
-# self.list_of_output = []
-# for key, values in self.IP_info.items():
-#     spacer = " " * (16 - len(key))
-#     spacer_2 = " " * (30 - len(values[0]))
-#     spacer_3 = " " * (20 - len(values[1]))
-#     spacer_4 = " " * (20 - len(values[2]))
-#     final_output = f"{key[:16]}{spacer} {values[0][0:30]}{spacer_2} {values[1][0:20]}{spacer_3} {values[2][0:20]}{spacer_4} {values[3]}"
-#     self.list_of_output.append(final_output)
-
-#        add_check = input(
-#            '\nДля дополнительной проверки не отвечающих серверов, укажите количество отправляемых пакетов\n')
-#        if int(add_check) > 0:
-#            for adress in self.additional_check:
-#                self.ping([adress], add_check, False)
